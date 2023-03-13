@@ -1,67 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-            <h2>Task 01 >> HTML Basics</h2>
-    <form>
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name"><br>
+<form method="post" action="submit.php" enctype="multipart/form-data">
+  <label for="name">Name:</label>
+  <input type="text" name="name" required>
 
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email"><br>
+  <label for="email">Email:</label>
+  <input type="email" name="email" required>
 
-        <input type="submit" value="Submit">
-    </form>
+  <label for="password">Password:</label>
+  <input type="password" name="password" required>
 
-</body>
-</html>
+  <label for="profile-pic">Profile Picture:</label>
+  <input type="file" name="profile-pic" accept="image/*" required>
+
+  <input type="submit" value="Submit">
+</form>
 
 
 
 <?php
-            //Task 02 Basic OOP in PHP
-class Person {
-  private $name;
-  private $email;
+session_start();
 
-  public function setName($name) {
-    $this->name = $name;
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+
+  $name = $_POST['name'];
+  $email = $_POST['email'];
+  $password = $_POST['password'];
+
+  if (empty($name) || empty($email) || empty($password)) {
+    die('Please fill out all fields.');
   }
 
-  public function setEmail($email) {
-    $this->email = $email;
+  if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    die('Invalid email format.');
   }
 
-  public function getName() {
-    return $this->name;
-  }
+  $uploads_dir = 'uploads/';
+  $profile_pic_name = uniqid() . '-' . $_FILES['profile-pic']['name'];
+  $profile_pic_tmp_name = $_FILES['profile-pic']['tmp_name'];
+  move_uploaded_file($profile_pic_tmp_name, $uploads_dir . $profile_pic_name);
 
-  public function getEmail() {
-    return $this->email;
-  }
+  $user_data = [$name, $email, $profile_pic_name];
+  $fp = fopen('users.csv', 'a');
+  fputcsv($fp, $user_data);
+  fclose($fp);
+
+
+  setcookie('user_name', $name, time() + 3600);
+
+  header('Location: success.php');
+  exit();
 }
+?>
 
 
-            // Task 03 Superglobal Variables in PHP
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Profile Picture</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php
+        $fp = fopen('users.csv', 'r');
+        while (($user = fgetcsv($fp)) !== false) {
+            echo '<tr>';
+            echo '<td>' . htmlspecialchars($user[0]) . '</td>';
+            echo '<td>' . htmlspecialchars($user[1]) . '</td>';
+            echo '<td><img src="uploads/' . htmlspecialchars($user[2]) . '"></td>';
+            echo '<td>' . htmlspecialchars($user[3]) . '</td>';
+            echo '</tr>';
+        }
+        fclose($fp);
+        ?>
+    </tbody>
+</table>
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  
-  $name = $_POST["name"];
-  $email = $_POST["email"];
-
-  
-  $person = new Person();
-
-  
-  $person->setName($name);
-  $person->setEmail($email);
-
-  
-  echo "Name: " . $person->getName() . "<br>";
-  echo "Email: " . $person->getEmail() . "<br>";
-}
